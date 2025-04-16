@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Result Analysis</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* General Styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #6fbf73, #48c6ef); /* Gradient background */
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #ffffff;
+            border-radius: 15px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            position: relative;
+        }
+
+        .container:hover {
+            transform: translateY(-10px);
+            /* Hover effect for lift */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+        }
+
+        .welcome-container,
+        .result-container,
+        .ranking-container {
+            display: none;
+        }
+
+        .active {
+            display: block;
+        }
+
+        h1, h2 {
+            color: #34495e;
+            font-weight: 700;
+            margin-bottom: 20px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            font-size: 28px;
+        }
+
+        h2 {
+            font-size: 22px;
+            color: #16a085;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        label {
+            margin: 10px 0 5px;
+            font-weight: bold;
+            color: #333;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="file"] {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            width: 90%;
+            max-width: 500px;
+            font-size: 16px;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            border: 2px solid #16a085;
+            outline: none;
+            box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            padding: 14px 24px;
+            background-color: #16a085;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background-color: #1abc9c;
+        }
+
+        .error {
+            color: #e74c3c;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+            font-size: 16px;
+        }
+
+        th {
+            background-color: #16a085;
+            color: white;
+            font-size: 18px;
+        }
+
+        tbody tr:nth-child(odd) {
+            background-color: #ecf0f1;
+        }
+
+        tbody tr:hover {
+            background-color: #d5d8dc;
+            cursor: pointer;
+        }
+
+        .analysis p {
+            margin: 12px 0;
+            font-size: 18px;
+            color: #333;
+        }
+
+        .analysis span {
+            font-weight: 700;
+            color: #16a085;
+        }
+
+        .ranking-container {
+            margin-top: 30px;
+        }
+
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1, h2 {
+                font-size: 24px;
+            }
+
+            form {
+                padding: 10px;
+            }
+
+            input[type="text"],
+            input[type="number"],
+            input[type="file"],
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container welcome-container active">
+        <h1>Welcome to the 7th Semester Result </h1>
+        <button onclick="showResultPage()">Next</button>
+    </div>
+
+    <div class="container result-container">
+        <h1>Student Result Analysis</h1>
+        <form id="studentForm">
+            <label for="usn">University Serial Number (must start with 2BL)</label>
+            <input type="text" id="usn" maxlength="10" required>
+            <label for="name">Name:</label>
+            <input type="text" id="name" name="name" required>
+            <label for="subject1">SA Marks (0-100):</label>
+            <input type="number" id="subject1" name="subject1" min="0" max="100" required>
+            <label for="subject2">CC Marks (0-100):</label>
+            <input type="number" id="subject2" name="subject2" min="0" max="100" required>
+            <label for="subject3">CNS Marks (0-100):</label>
+            <input type="number" id="subject3" name="subject3" min="0" max="100" required>
+            <label for="subject4">IOT Marks (0-100):</label>
+            <input type="number" id="subject4" name="subject4" min="0" max="100" required>
+            <label for="subject5">EPM Marks (0-100):</label>
+            <input type="number" id="subject5" name="subject5" min="0" max="100" required>
+            <button type="button" onclick="insertData()">Insert</button>
+        </form>
+
+        <div>
+            <label for="uploadExcel">Upload Excel file:</label>
+            <input type="file" id="uploadExcel" accept=".xlsx, .xls">
+            <button onclick="uploadExcel()">Upload Excel</button>
+        </div>
+
+        <div id="error" class="error"></div>
+
+        <h2>Class Results</h2>
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>USN</th>
+                    <th>Name</th>
+                    <th>SA</th>
+                    <th>CC</th>
+                    <th>CNS</th>
+                    <th>IOT</th>
+                    <th>EPM</th>
+                    <th>CGPA</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h2>Analysis</h2>
+        <div class="analysis">
+            <p>Passing Percentage: <span id="passingPercentage">0</span>%</p>
+            <p>FCD: <span id="fcdCount">0</span></p>
+            <p>FC: <span id="fcCount">0</span></p>
+            <p>SC: <span id="scCount">0</span></p>
+            <p>Total Failed Students: <span id="totalFailed">0</span></p>
+            <p>Number of Failed Students per Subject:</p>
+            <p>SA: <span id="failedSub1">0</span></p>
+            <p>CC: <span id="failedSub2">0</span></p>
+            <p>CNS: <span id="failedSub3">0</span></p>
+            <p>IOT: <span id="failedSub4">0</span></p>
+            <p>EPM: <span id="failedSub5">0</span></p>
+        </div>
+
+        <h2>Analysis Pie Chart</h2>
+        <canvas id="analysisChart" width="400" height="400"></canvas>
+
+        <button onclick="showRankingPage()">Show Rankings</button>
+        <button onclick="exportToExcel()">Export to Excel</button>
+    </div>
+
+    <div class="container ranking-container">
+        <h1>Student Rankings</h1>
+        <table id="rankingTable">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>USN</th>
+                    <th>Name</th>
+                    <th>Percentage</th>
+                    <th>CGPA</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <button onclick="printList()">Print</button>
+        <button onclick="showResultPage()">Back</button>
+    </div>
+
+    <script>
+        let studentData = [];
+        let analysisChart;
+
+        function insertData() {
+            const usn = document.getElementById('usn').value;
+            const name = document.getElementById('name').value;
+            const subject1 = parseInt(document.getElementById('subject1').value);
+            const subject2 = parseInt(document.getElementById('subject2').value);
+            const subject3 = parseInt(document.getElementById('subject3').value);
+            const subject4 = parseInt(document.getElementById('subject4').value);
+            const subject5 = parseInt(document.getElementById('subject5').value);
+
+            if (!usn || !name || isNaN(subject1) || isNaN(subject2) || isNaN(subject3) || isNaN(subject4) || isNaN(subject5)) {
+                document.getElementById('error').innerText = "Please fill in all fields correctly.";
+                return;
+            }
+
+            const cgpa = ((subject1 + subject2 + subject3 + subject4 + subject5) / 5).toFixed(2);
+            const percentage = ((cgpa / 10) * 100).toFixed(2);
+            const student = {
+                usn,
+                name,
+                subject1,
+                subject2,
+                subject3,
+                subject4,
+                subject5,
+                cgpa,
+                percentage
+            };
+
+            studentData.push(student);
+
+            // Clear all rows in the table before updating with new data
+            const resultTableBody = document.querySelector('#resultTable tbody');
+            resultTableBody.innerHTML = ''; // Clear existing rows
+
+            updateResults();  // Update the results with the new student data
+
+            // Reset the form after inserting data
+            document.getElementById('studentForm').reset(); // This will clear all the input fields in the form.
+            document.getElementById('error').innerText = ''; // Clear error message if any
+        }
+
+        function showRankingPage() {
+            document.querySelector('.result-container').classList.remove('active');
+            document.querySelector('.ranking-container').classList.add('active');
+            updateRanking();
+        }
+
+        function showResultPage() {
+            document.querySelector('.welcome-container').classList.remove('active');
+            document.querySelector('.result-container').classList.add('active');
+        }
+
+        function updateResults() {
+            const resultTableBody = document.querySelector('#resultTable tbody');
+            resultTableBody.innerHTML = ''; // Reset the table body
+
+            let passingCount = 0;
+            let totalFailed = 0;
+            let failedSubjects = { subject1: 0, subject2: 0, subject3: 0, subject4: 0, subject5: 0 };
+
+            studentData.forEach(student => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${student.usn}</td><td>${student.name}</td><td>${student.subject1}</td><td>${student.subject2}</td><td>${student.subject3}</td><td>${student.subject4}</td><td>${student.subject5}</td><td>${student.cgpa}</td>`;
+                resultTableBody.appendChild(tr);
+
+                let failed = 0;
+                if (student.subject1 < 35) failed++;
+                if (student.subject2 < 35) failed++;
+                if (student.subject3 < 35) failed++;
+                if (student.subject4 < 35) failed++;
+                if (student.subject5 < 35) failed++;
+
+                if (failed === 0) {
+                    passingCount++;
+                }
+                totalFailed += failed;
+
+                failedSubjects.subject1 += student.subject1 < 35 ? 1 : 0;
+                failedSubjects.subject2 += student.subject2 < 35 ? 1 : 0;
+                failedSubjects.subject3 += student.subject3 < 35 ? 1 : 0;
+                failedSubjects.subject4 += student.subject4 < 35 ? 1 : 0;
+                failedSubjects.subject5 += student.subject5 < 35 ? 1 : 0;
+            });
+
+            // Update the analysis fields
+            const passingPercentage = ((passingCount / studentData.length) * 100).toFixed(2);
+            const fcCount = passingCount;
+            const scCount = studentData.length - passingCount;
+            document.getElementById('passingPercentage').innerText = passingPercentage;
+            document.getElementById('fcdCount').innerText = fcCount;
+            document.getElementById('fcCount').innerText = fcCount;
+            document.getElementById('scCount').innerText = scCount;
+            document.getElementById('totalFailed').innerText = totalFailed;
+            document.getElementById('failedSub1').innerText = failedSubjects.subject1;
+            document.getElementById('failedSub2').innerText = failedSubjects.subject2;
+            document.getElementById('failedSub3').innerText = failedSubjects.subject3;
+            document.getElementById('failedSub4').innerText = failedSubjects.subject4;
+            document.getElementById('failedSub5').innerText = failedSubjects.subject5;
+
+            if (analysisChart) analysisChart.destroy(); // If chart exists, destroy before re-creating.
+            createChart();  // Create the new chart with updated data.
+        }
+
+        function createChart() {
+            const ctx = document.getElementById('analysisChart').getContext('2d');
+            analysisChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Passed', 'Failed'],
+                    datasets: [{
+                        data: [parseFloat(document.getElementById('passingPercentage').innerText), 100 - parseFloat(document.getElementById('passingPercentage').innerText)],
+                        backgroundColor: ['#16a085', '#e74c3c'],
+                    }]
+                }
+            });
+        }
+
+        function updateRanking() {
+            const rankingTableBody = document.querySelector('#rankingTable tbody');
+            rankingTableBody.innerHTML = '';  // Reset the table
+
+            const sortedData = [...studentData].sort((a, b) => b.percentage - a.percentage);
+
+            sortedData.forEach((student, index) => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `<td>${index + 1}</td><td>${student.usn}</td><td>${student.name}</td><td>${student.percentage}</td><td>${student.cgpa}</td>`;
+                rankingTableBody.appendChild(tr);
+            });
+        }
+
+        function exportToExcel() {
+            const ws = XLSX.utils.table_to_sheet(document.querySelector('#resultTable'));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Results");
+            XLSX.writeFile(wb, 'results.xlsx');
+        }
+
+        function printList() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
